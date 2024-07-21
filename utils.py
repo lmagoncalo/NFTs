@@ -1,8 +1,14 @@
-import torch
+import re
+import time
+
 import math
+import torch
 import torchvision.transforms as T
+from PIL import ImageColor
 from torch import nn
 from torch.nn import functional as F
+
+# from gpt4free import you
 
 
 def sinc(x):
@@ -88,3 +94,36 @@ class MakeCutouts(nn.Module):
 
         cutouts = torch.cat(cutouts, dim=0)
         return cutouts
+
+
+def get_color(prompt):
+    # Repeat the request until we get a successful response
+    response = None
+    while response is None:
+        try:
+            response = you.Completion.create(
+                prompt=f"Give an hexadecimal color code that most represents a {prompt}")
+        except Exception:
+            response = None
+            # Sleep 5 seconds and repeat the request
+            time.sleep(5)
+
+    text_response = response.dict()['text']
+    print(text_response)
+
+    # Get all the hex color values from response
+    hex_values = re.findall(r'#(?:[0-9a-fA-F]{3}){1,2}', text_response)
+    print(hex_values)
+    # If received at least one color code, get the first one
+    if len(hex_values) != 0:
+        color = ImageColor.getcolor(hex_values[0], "RGB")
+        print(f"{color}")
+        # Convert 0-256 rgb to 0-1 rgb
+        color = torch.tensor(list(color)) / 256
+        # Add alpha channel
+        color = torch.concat((color, torch.ones((1,))))
+    else:
+        # If no color was found in response, optimize the color as well
+        color = None
+
+    return color

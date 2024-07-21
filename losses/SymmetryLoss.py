@@ -6,7 +6,7 @@ class SymmetryLoss(nn.Module):
     def __init__(self):
         super().__init__()
 
-    def get_loss(self, out):
+    def forward(self, out):
         mseloss = nn.MSELoss()
-        cur_loss = mseloss(out, torch.flip(out, [3]))
+        cur_loss = -mseloss(out, torch.flip(out, [3]))
         return cur_loss
